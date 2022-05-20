@@ -4,11 +4,10 @@ from PIL import Image, ImageOps
 class RGBGlitch:
 
   @staticmethod
-  def rgbglitch(background_file, foreground):
-
+  def rgbglitch(foreground):
     final_foreground = Image.fromarray(foreground)
-    background = Image.open(background_file)
-    r, g, b = background.split()
+    background = Image.fromarray(foreground)
+    r, g, b, a = background.split()
     background = Image.merge("RGB", (b, g, r))
 
     r, g, b, a = final_foreground.split()

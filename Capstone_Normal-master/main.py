@@ -8,6 +8,7 @@ import time
 from BackgroundRemover import Remover
 from BackgroundReplacer import Replacer
 from RGBGlitch import RGBGlitch
+from Outliner import Outline
 
 def runPlayer(filename):
     app = QApplication([])
@@ -30,21 +31,25 @@ def convertVideoToFrames(filename):
     while success:
 
         # Getting Foreground Person
-        result1 = model.predict(image)
+        masked_image,mask = model.predict(image)
 
         # Adding glitch effect on person
-        result5 = RGBGlitch.rgbglitch('bg_gl.png', result1)
-        #result4 = Replacer.custom_background('bg_gl.png', result1)
-
+        masked_image_copy = masked_image.copy()
+        outlined_image = Outline.MakeOutlline(masked_image_copy,mask)
+        outlined_image = cv2.cvtColor(outlined_image, cv2.COLOR_RGBA2RGB)
+        glitched_image = RGBGlitch.rgbglitch(masked_image)
+        replaced_image = Replacer.custom_background('bg4.png', masked_image)
         # result.save('Output/image'+str(count)+'.png')
-        # cv2.imwrite('Output\\image'+str(count)+'.png', result)
+        #cv2.imwrite('PNG_Iframes_exported\\image'+str(count)+'.png', outlined_image)
 
-        frameArrGlitch.append(result5)
+        frameArrGlitch.append(glitched_image)
+        frameArrBackgrnd.append(replaced_image)
+        frameArrFull.append(outlined_image)
         #frameArrBackgrnd.append(result4)
         count = count + 1
         success, image = vidcap.read()
         print('Read a new frame: ', success)
-    return frameArrBackgrnd, frameArrGlitch
+    return frameArrBackgrnd, frameArrGlitch, frameArrFull
 
 def convertFramesToVideo(frames, name):
 
@@ -58,12 +63,13 @@ def convertFramesToVideo(frames, name):
 if __name__ == '__main__':
     # we are reading the video firstly
     start = time.time()
-    framesBckgrnd, framesRGB = convertVideoToFrames('test.mp4')
+    framesBckgrnd, framesRGB, frameArrOutline = convertVideoToFrames('test.mp4')
     finish = time.time()
     duration = round((finish - start))
     # then the frames that we read(and eventually passed to our model) reconverting to video
-    convertFramesToVideo(framesBckgrnd, "test_pixelsort")
-    convertFramesToVideo(framesRGB, "test_rgbglitch_6sec")
+    convertFramesToVideo(framesBckgrnd, "test_background_replaced")
+    convertFramesToVideo(framesRGB, "test_rgbglitch")
+    convertFramesToVideo(frameArrOutline, "test_outline")
     #showing that video
     #runPlayer('output.mp4')
 
